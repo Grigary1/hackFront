@@ -104,7 +104,7 @@ export default function TabsLayout() {
         <Tabs.Screen 
           name="index" 
           options={{ 
-            title: 'More',
+            title: 'WasteHub',
             headerShown: true,
             headerTitle: '⚙️ More',
             headerStyle: {

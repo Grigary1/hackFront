@@ -3,7 +3,7 @@
     "name": "StickerSmash",
     "slug": "StickerSmash",
     "extra": {
-      "BACKEND_URL": "process.env.BACKEND_URL",
+      "BACKEND_URL": "process.env.BACKEND_URL"
     },
     "version": "1.0.0",
     "orientation": "portrait",
@@ -36,7 +36,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

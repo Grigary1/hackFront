@@ -1,15 +1,12 @@
+// app/auth/_layout.tsx
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { useColorScheme } from '@/hooks/useColorScheme'; // or use native hook
 
-export default function Layout() {
-  const colorScheme = useColorScheme(); // You can also use Appearance.getColorScheme()
-
+export default function AuthLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
-    </ThemeProvider>
+    <Stack
+      screenOptions={{
+        headerShown: false, // 👈 Hides header on all auth screens
+      }}
+    />
   );
 }

@@ -3,8 +3,10 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { router } from 'expo-router';
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { saveToken } from './../utils/authToken';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:5000';
+
+const BACKEND_URL = 'https://hackbackend-0v78.onrender.com'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,14 +21,22 @@ export default function LoginScreen() {
 
     try {
       setIsLoading(true);
-      const response = await axios.post(`${BACKEND_URL}/api/login`, {
+
+      const response = await axios.post(`${BACKEND_URL}/api/user/login`, {
         email,
         password,
       });
 
-      // Success
-      Alert.alert('Login Successful', 'Welcome back!');
-      router.replace('/(tabs)/home');
+      if (response.data.success) {
+        const token = response.data.token;
+        if (token) {
+          console.log("token ",token)
+          await saveToken(token);
+        }
+
+        Alert.alert('Login Successful', 'Welcome back!');
+        router.replace('/(tabs)/home');
+      }
     } catch (error: any) {
       const message =
         error?.response?.data?.message || error?.message || 'Something went wrong';
@@ -35,6 +45,7 @@ export default function LoginScreen() {
       setIsLoading(false);
     }
   };
+
 
   return (
     <View style={styles.container}>
