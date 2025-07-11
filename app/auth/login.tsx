@@ -35,7 +35,7 @@ export default function LoginScreen() {
         }
 
         Alert.alert('Login Successful', 'Welcome back!');
-        router.replace('/(tabs)/home');
+        router.replace('/(protected)/home');
       }
     } catch (error: any) {
       const message =
