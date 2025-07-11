@@ -1,38 +1,38 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Linking } from 'react-native';
+import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Nearby() {
-  const [selectedWasteType, setSelectedWasteType] = useState('biodegradable');
+  const [selectedType, setSelectedType] = useState<'biodegradable' | 'nonBiodegradable' | 'manure'>('biodegradable');
+  const [manureList, setManureList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // Sample waste locations data
+  // Static sample data
   const wasteLocations = {
     biodegradable: [
-      { id: 1, type: 'Food Waste', distance: '0.2 km', address: 'MG Road, Sector 1', amount: '2.5 kg', time: '2 hours ago', priority: 'high' },
-      { id: 2, type: 'Garden Waste', distance: '0.5 km', address: 'Green Park Avenue', amount: '1.8 kg', time: '4 hours ago', priority: 'medium' },
-      { id: 3, type: 'Kitchen Scraps', distance: '0.8 km', address: 'Market Street', amount: '3.2 kg', time: '6 hours ago', priority: 'high' },
-      { id: 4, type: 'Organic Waste', distance: '1.1 km', address: 'Residency Road', amount: '1.5 kg', time: '8 hours ago', priority: 'low' },
+      { id: 1, type: 'Food Waste', distance: '0.2 km', address: 'MG Road', amount: '2.5 kg', time: '2 hours ago', priority: 'high' },
+      { id: 2, type: 'Garden Waste', distance: '0.5 km', address: 'Green Park Avenue', amount: '1.8 kg', time: '4 hours ago', priority: 'medium' }
     ],
     nonBiodegradable: [
-      { id: 5, type: 'Plastic Bottles', distance: '0.3 km', address: 'Commercial Complex', amount: '0.8 kg', time: '1 hour ago', priority: 'medium' },
-      { id: 6, type: 'Paper Waste', distance: '0.6 km', address: 'Office District', amount: '2.1 kg', time: '3 hours ago', priority: 'high' },
-      { id: 7, type: 'Glass Items', distance: '0.9 km', address: 'Shopping Mall', amount: '1.4 kg', time: '5 hours ago', priority: 'medium' },
-      { id: 8, type: 'Metal Cans', distance: '1.2 km', address: 'Industrial Area', amount: '0.9 kg', time: '7 hours ago', priority: 'low' },
+      { id: 3, type: 'Plastic Bottles', distance: '0.3 km', address: 'Commercial Complex', amount: '0.8 kg', time: '1 hour ago', priority: 'medium' },
+      { id: 4, type: 'Paper Waste', distance: '0.6 km', address: 'Office District', amount: '2.1 kg', time: '3 hours ago', priority: 'high' }
     ]
   };
 
-  const currentLocations = wasteLocations[selectedWasteType];
+  // Fetch manure listings from backend
+  useEffect(() => {
+    if (selectedType === 'manure') {
+      setLoading(true);
+      axios.get('http://10.0.11.39:8000/api/user/nearby?longitude=77.5946&latitude=12.9716&distanceKm=5')
+        .then(res => setManureList(res.data))
+        .catch(err => console.error('Manure fetch error:', err))
+        .finally(() => setLoading(false));
+    }
+  }, [selectedType]);
 
-  const getWasteIcon = (type) => {
-    const icons = {
-      'Food Waste': '🍎', 'Garden Waste': '🌿', 'Kitchen Scraps': '🥬', 'Organic Waste': '🌱',
-      'Plastic Bottles': '🍼', 'Paper Waste': '📄', 'Glass Items': '🍾', 'Metal Cans': '🥫'
-    };
-    return icons[type] || '📦';
-  };
-
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = (priority: string) => {
     switch(priority) {
       case 'high': return '#ef4444';
       case 'medium': return '#f59e0b';
@@ -41,414 +41,143 @@ export default function Nearby() {
     }
   };
 
-  const getTypeTheme = () => {
-    return selectedWasteType === 'biodegradable' 
-      ? { primary: '#10b981', secondary: '#ecfdf5', accent: '#065f46' }
-      : { primary: '#3b82f6', secondary: '#eff6ff', accent: '#1e40af' };
+  const getWasteIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      'Food Waste': '🍎', 'Garden Waste': '🌿', 'Plastic Bottles': '🍼', 'Paper Waste': '📄',
+      'Manure': '💩'
+    };
+    return icons[type] || '♻️';
   };
 
-  const theme = getTypeTheme();
+  const getTheme = () => {
+    switch(selectedType) {
+      case 'biodegradable':
+        return { primary: '#10b981', secondary: '#ecfdf5', accent: '#065f46' };
+      case 'nonBiodegradable':
+        return { primary: '#3b82f6', secondary: '#eff6ff', accent: '#1e40af' };
+      case 'manure':
+        return { primary: '#a16207', secondary: '#fefce8', accent: '#78350f' };
+    }
+  };
+
+  const currentLocations = selectedType === 'manure' ? manureList : wasteLocations[selectedType];
+  const theme = getTheme();
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.accent }]}>
-        <Text style={styles.headerTitle}>Nearby Waste Collection</Text>
+        <Text style={styles.headerTitle}>
+          {selectedType === 'manure' ? 'Nearby Manure Listings' : 'Nearby Waste Collection'}
+        </Text>
         <Text style={styles.headerSubtitle}>Help clean your community 🌍</Text>
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{currentLocations.length}</Text>
-            <Text style={styles.statLabel}>Locations</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {currentLocations.reduce((sum, loc) => sum + parseFloat(loc.amount), 0).toFixed(1)}
-            </Text>
-            <Text style={styles.statLabel}>Total kg</Text>
-          </View>
-        </View>
       </View>
 
       {/* Toggle Switch */}
       <View style={styles.toggleContainer}>
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            selectedWasteType === 'biodegradable' && [styles.toggleButtonActive, { backgroundColor: theme.primary }]
-          ]}
-          onPress={() => setSelectedWasteType('biodegradable')}
-        >
-          <Text style={styles.toggleIcon}>🌱</Text>
-          <Text style={[
-            styles.toggleText,
-            selectedWasteType === 'biodegradable' && styles.toggleTextActive
-          ]}>
-            Biodegradable
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.toggleButton,
-            selectedWasteType === 'nonBiodegradable' && [styles.toggleButtonActive, { backgroundColor: theme.primary }]
-          ]}
-          onPress={() => setSelectedWasteType('nonBiodegradable')}
-        >
-          <Text style={styles.toggleIcon}>♻️</Text>
-          <Text style={[
-            styles.toggleText,
-            selectedWasteType === 'nonBiodegradable' && styles.toggleTextActive
-          ]}>
-            Non-Biodegradable
-          </Text>
-        </TouchableOpacity>
+        {['biodegradable', 'nonBiodegradable', 'manure'].map((type) => (
+          <TouchableOpacity
+            key={type}
+            style={[
+              styles.toggleButton,
+              selectedType === type && [styles.toggleButtonActive, { backgroundColor: theme.primary }]
+            ]}
+            onPress={() => setSelectedType(type as typeof selectedType)}
+          >
+            <Text style={styles.toggleText}>
+              {type === 'biodegradable' ? '🌱 Biodegradable' :
+               type === 'nonBiodegradable' ? '♻️ Non-Biodegradable' :
+               '💩 Manure'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {/* Map View */}
-      <View style={[styles.mapContainer, { backgroundColor: theme.secondary }]}>
-        <View style={styles.mapHeader}>
-          <Text style={styles.mapTitle}>📍 Collection Points</Text>
-          <TouchableOpacity style={styles.mapViewButton}>
-            <Text style={styles.mapViewText}>🗺️ Full Map</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <View style={styles.mapPlaceholder}>
-          <Text style={styles.mapEmoji}>🗺️</Text>
-          <Text style={styles.mapLabel}>Interactive Map View</Text>
-          
-          {/* Simulated Map Pins */}
-          <View style={styles.pinContainer}>
-            {currentLocations.slice(0, 3).map((location, index) => (
-              <View 
-                key={location.id} 
-                style={[
-                  styles.mapPin, 
-                  { 
-                    top: 20 + (index * 25), 
-                    left: 40 + (index * 35),
-                    backgroundColor: theme.primary
-                  }
-                ]}
-              >
-                <Text style={styles.pinText}>{getWasteIcon(location.type)}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
+      {/* List */}
+      <ScrollView style={styles.listWrapper} contentContainerStyle={{ paddingBottom: 60 }}>
+        {loading ? (
+          <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 50 }} />
+        ) : currentLocations.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 40, color: '#6b7280' }}>No data available.</Text>
+        ) : currentLocations.map((loc: any, index: number) => {
+          const isManure = selectedType === 'manure';
+          const location = isManure ? loc.location : loc.address;
+          const lat = loc?.location?.coordinates?.[1];
+          const lon = loc?.location?.coordinates?.[0];
 
-      {/* Locations List */}
-      <View style={styles.listContainer}>
-        <View style={styles.listHeader}>
-          <Text style={styles.listTitle}>Available Collections</Text>
-          <TouchableOpacity style={[styles.sortButton, { borderColor: theme.primary }]}>
-            <Text style={[styles.sortText, { color: theme.primary }]}>📍 Sort by Distance</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView style={styles.locationsList} showsVerticalScrollIndicator={false}>
-          {currentLocations.map((location) => (
-            <TouchableOpacity key={location.id} style={styles.locationCard}>
+          return (
+            <View key={loc._id || index} style={styles.card}>
               <View style={styles.cardHeader}>
-                <View style={[styles.locationIcon, { backgroundColor: theme.secondary }]}>
-                  <Text style={styles.locationEmoji}>{getWasteIcon(location.type)}</Text>
-                </View>
-                <View style={styles.locationInfo}>
-                  <Text style={styles.locationType}>{location.type}</Text>
-                  <Text style={styles.locationAddress}>{location.address}</Text>
-                </View>
-                <View style={styles.locationMeta}>
-                  <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(location.priority) }]}>
-                    <Text style={styles.priorityText}>{location.priority.toUpperCase()}</Text>
-                  </View>
-                </View>
+                <Text style={[styles.cardTitle, { color: theme.accent }]}>
+                  {isManure ? loc.sellerName : loc.type}
+                </Text>
+                {isManure && loc.phoneNumber && (
+                  <TouchableOpacity onPress={() => Linking.openURL(`tel:${loc.phoneNumber}`)}>
+                    <Text style={styles.cardPhone}>📞 Call</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              
-              <View style={styles.cardDetails}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>📏</Text>
-                  <Text style={styles.detailText}>{location.distance}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>⚖️</Text>
-                  <Text style={styles.detailText}>{location.amount}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailIcon}>🕐</Text>
-                  <Text style={styles.detailText}>{location.time}</Text>
-                </View>
-              </View>
-              
-              <TouchableOpacity style={[styles.collectButton, { backgroundColor: theme.primary }]}>
-                <Text style={styles.collectButtonText}>🚚 Collect Now</Text>
+              <Text style={styles.cardText}>
+                {isManure ? `₹ ${loc.pricePerKg}/kg` : loc.amount}
+              </Text>
+              <Text style={styles.cardText}>
+                {isManure ? `Quantity: ${loc.quantity} kg` : `${loc.distance} • ${loc.time}`}
+              </Text>
+              <Text style={styles.cardText}>
+                📍 {typeof location === 'string' ? location : lat && lon ? `${lat}, ${lon}` : 'Location unavailable'}
+              </Text>
+              {loc.landmark && <Text style={styles.cardText}>🏞️ Landmark: {loc.landmark}</Text>}
+              <TouchableOpacity
+                style={[styles.collectBtn, { backgroundColor: theme.primary }]}
+                onPress={() => {
+                  if (lat && lon) {
+                    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`);
+                  }
+                }}
+              >
+                <Text style={styles.collectText}>
+                  {isManure ? '🛒 Buy Manure' : '🚚 Collect Now'}
+                </Text>
               </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  header: {
-    padding: 20,
-    paddingTop: 50,
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#ffffff',
-    opacity: 0.9,
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#ffffff',
-    opacity: 0.8,
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: '#ffffff',
-    opacity: 0.3,
-  },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { padding: 20, paddingTop: 50, borderBottomLeftRadius: 25, borderBottomRightRadius: 25 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 5 },
+  headerSubtitle: { fontSize: 14, color: '#f0fdf4', opacity: 0.9 },
   toggleContainer: {
-    flexDirection: 'row',
-    margin: 20,
-    backgroundColor: '#e2e8f0',
-    borderRadius: 16,
-    padding: 4,
+    flexDirection: 'row', margin: 16, backgroundColor: '#e5e7eb', borderRadius: 12, padding: 4,
   },
   toggleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 8,
   },
   toggleButtonActive: {
-    backgroundColor: '#10b981',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  toggleIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2,
+    shadowRadius: 4, elevation: 3,
   },
   toggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748b',
+    fontSize: 13, fontWeight: '600', color: '#374151',
   },
-  toggleTextActive: {
-    color: '#ffffff',
+  listWrapper: { paddingHorizontal: 16 },
+  card: {
+    backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 3,
   },
-  mapContainer: {
-    margin: 20,
-    borderRadius: 16,
-    padding: 16,
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardTitle: { fontSize: 18, fontWeight: 'bold' },
+  cardPhone: { fontSize: 14, color: '#3b82f6', fontWeight: 'bold' },
+  cardText: { fontSize: 14, color: '#4b5563', marginBottom: 4 },
+  collectBtn: {
+    marginTop: 10, paddingVertical: 10, borderRadius: 12, alignItems: 'center',
   },
-  mapHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  mapTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  mapViewButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-  },
-  mapViewText: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  mapPlaceholder: {
-    height: 120,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  mapEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  mapLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  pinContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  mapPin: {
-    position: 'absolute',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  pinText: {
-    fontSize: 16,
-  },
-  listContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1e293b',
-  },
-  sortButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderRadius: 8,
-  },
-  sortText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  locationsList: {
-    flex: 1,
-  },
-  locationCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  locationIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  locationEmoji: {
-    fontSize: 24,
-  },
-  locationInfo: {
-    flex: 1,
-  },
-  locationType: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1e293b',
-    marginBottom: 2,
-  },
-  locationAddress: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  locationMeta: {
-    alignItems: 'flex-end',
-  },
-  priorityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  priorityText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  cardDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailIcon: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  detailText: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  collectButton: {
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  collectButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#ffffff',
+  collectText: {
+    fontSize: 14, fontWeight: 'bold', color: '#fff',
   },
 });

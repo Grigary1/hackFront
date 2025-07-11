@@ -172,13 +172,139 @@ export default function DisposalMap() {
   );
 }
 
+//components/DisposalMap.js
+
+
+
+
+// import React, { useEffect, useState } from 'react';
+// import {
+//   View,
+//   StyleSheet,
+//   ActivityIndicator,
+//   Text,
+//   TouchableOpacity,
+//   Alert,
+//   SafeAreaView,
+// } from 'react-native';
+// import MapView, { Marker } from 'react-native-maps';
+// import * as Location from 'expo-location';
+// import axios from 'axios';
+// import { Ionicons } from '@expo/vector-icons';
+
+// export default function DisposalMap() {
+//   const BACKEND_URL = 'https://10.0.11.39';
+
+//   const [location, setLocation] = useState(null);
+//   const [collectionPoints, setCollectionPoints] = useState([]);
+//   const [loading, setLoading] = useState(true);
+
+//   useEffect(() => {
+//     (async () => {
+//       const { status } = await Location.requestForegroundPermissionsAsync();
+//       if (status !== 'granted') {
+//         Alert.alert('Permission Denied', 'Location permission is required.');
+//         return;
+//       }
+//       const { coords } = await Location.getCurrentPositionAsync({});
+//       setLocation(coords);
+//       setLoading(false);
+//       fetchCollectionPoints();
+//     })();
+//   }, []);
+
+//   const fetchCollectionPoints = async () => {
+//     try {
+//       const { data } = await axios.get(`${BACKEND_URL}/api/user/nearby?longitude=77.5946&latitude=12.9716&distanceKm=5`);
+//       console.log("dat : ",data);
+//       if (Array.isArray(data)) {
+//         console.log("dat : ",data);
+//         setCollectionPoints(data);
+//       } else {
+//         Alert.alert('Error', 'Unexpected response structure');
+//       }
+//     } catch (err) {
+//       Alert.alert('Error', 'Failed to fetch collection points');
+//     }
+//   };
+
+//   if (loading || !location) {
+//     return (
+//       <View style={styles.loadingWrapper}>
+//         <ActivityIndicator size="large" color="#2196F3" />
+//       </View>
+//     );
+//   }
+
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <View style={styles.header}>
+//         <Ionicons name="trash-bin" size={24} color="#fff" />
+//         <Text style={styles.headerTitle}>Collection Points</Text>
+//       </View>
+
+//       <MapView
+//         style={styles.map}
+//         initialRegion={{
+//           latitude: location.latitude,
+//           longitude: location.longitude,
+//           latitudeDelta: 0.05,
+//           longitudeDelta: 0.05,
+//         }}
+//         showsUserLocation
+//       >
+//         {collectionPoints.map((point, i) => {
+//           let lat, lon;
+
+//           // If location is GeoJSON Point
+//           if (typeof point.location === 'object' && point.location.type === 'Point') {
+//             lon = point.location.coordinates[0];
+//             lat = point.location.coordinates[1];
+//           } else {
+//             // Skip if not proper coordinates (can't geocode string in this code)
+//             return null;
+//           }
+
+//           return (
+//             <Marker
+//               key={i}
+//               coordinate={{ latitude: lat, longitude: lon }}
+//               title={point.sellerName}
+//               description={`Qty: ${point.quantity} kg | ₹${point.pricePerKg}/kg`}
+//               pinColor="orange"
+//             />
+//           );
+//         })}
+//       </MapView>
+//     </SafeAreaView>
+//   );
+// }
+
+
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  map: {
+    flex: 1,
+  },
   loadingWrapper: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   header: {
     height: 56,
     backgroundColor: '#2196F3',
@@ -186,8 +312,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
   },
-  headerTitle: { color: '#fff', fontSize: 18, marginLeft: 8, fontWeight: '600' },
-  map: { flex: 1 },
+  
   fabContainer: {
     position: 'absolute',
     bottom: 24,
@@ -204,6 +329,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     elevation: 5,
   },
+  headerTitle: { color: '#fff', fontSize: 18, marginLeft: 8, fontWeight: '600' },
   fabSecondary: { backgroundColor: '#4CAF50' },
   fabLabel: { color: '#fff', fontSize: 14, marginLeft: 6 },
 
@@ -237,3 +363,4 @@ const styles = StyleSheet.create({
   btnCancel: { backgroundColor: '#ddd', marginRight: 8 },
   btnSubmit: { backgroundColor: '#2196F3' },
 });
+
