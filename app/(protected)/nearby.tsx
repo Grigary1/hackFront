@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator, Linking } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  ActivityIndicator,
+  Linking
+} from 'react-native';
 import axios from 'axios';
 
 const { width, height } = Dimensions.get('window');
@@ -7,50 +16,52 @@ const { width, height } = Dimensions.get('window');
 export default function Nearby() {
   const [selectedType, setSelectedType] = useState<'biodegradable' | 'nonBiodegradable' | 'manure'>('biodegradable');
   const [manureList, setManureList] = useState([]);
+  const [nonBiodegradableList, setNonBiodegradableList] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Static sample data
   const wasteLocations = {
     biodegradable: [
-      { id: 1, type: 'Food Waste', distance: '0.2 km', address: 'MG Road', amount: '2.5 kg', time: '2 hours ago', priority: 'high' },
-      { id: 2, type: 'Garden Waste', distance: '0.5 km', address: 'Green Park Avenue', amount: '1.8 kg', time: '4 hours ago', priority: 'medium' }
-    ],
-    nonBiodegradable: [
-      { id: 3, type: 'Plastic Bottles', distance: '0.3 km', address: 'Commercial Complex', amount: '0.8 kg', time: '1 hour ago', priority: 'medium' },
-      { id: 4, type: 'Paper Waste', distance: '0.6 km', address: 'Office District', amount: '2.1 kg', time: '3 hours ago', priority: 'high' }
+      {
+        id: 1,
+        type: 'Food Waste',
+        distance: '0.2 km',
+        address: 'MG Road',
+        amount: '2.5 kg',
+        time: '2 hours ago',
+        priority: 'high'
+      },
+      {
+        id: 2,
+        type: 'Garden Waste',
+        distance: '0.5 km',
+        address: 'Green Park Avenue',
+        amount: '1.8 kg',
+        time: '4 hours ago',
+        priority: 'medium'
+      }
     ]
   };
 
-  // Fetch manure listings from backend
   useEffect(() => {
     if (selectedType === 'manure') {
       setLoading(true);
-      axios.get('http://10.0.11.39:8000/api/user/nearby?longitude=77.5946&latitude=12.9716&distanceKm=5')
+      axios
+        .get('http://10.0.11.39:8000/api/user/nearby?longitude=77.5946&latitude=12.9716&distanceKm=5')
         .then(res => setManureList(res.data))
         .catch(err => console.error('Manure fetch error:', err))
+        .finally(() => setLoading(false));
+    } else if (selectedType === 'nonBiodegradable') {
+      setLoading(true);
+      axios
+        .get('http://10.0.11.39:8000/api/user/showdisposenon')
+        .then(res => setNonBiodegradableList(res.data.data))
+        .catch(err => console.error('Non-biodegradable fetch error:', err))
         .finally(() => setLoading(false));
     }
   }, [selectedType]);
 
-  const getPriorityColor = (priority: string) => {
-    switch(priority) {
-      case 'high': return '#ef4444';
-      case 'medium': return '#f59e0b';
-      case 'low': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const getWasteIcon = (type: string) => {
-    const icons: Record<string, string> = {
-      'Food Waste': '🍎', 'Garden Waste': '🌿', 'Plastic Bottles': '🍼', 'Paper Waste': '📄',
-      'Manure': '💩'
-    };
-    return icons[type] || '♻️';
-  };
-
   const getTheme = () => {
-    switch(selectedType) {
+    switch (selectedType) {
       case 'biodegradable':
         return { primary: '#10b981', secondary: '#ecfdf5', accent: '#065f46' };
       case 'nonBiodegradable':
@@ -60,12 +71,28 @@ export default function Nearby() {
     }
   };
 
-  const currentLocations = selectedType === 'manure' ? manureList : wasteLocations[selectedType];
+  const getWasteIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      'Food Waste': '🍎',
+      'Garden Waste': '🌿',
+      'Plastic Bottles': '🍼',
+      'Paper Waste': '📄',
+      'Manure': '💩'
+    };
+    return icons[type] || '♻️';
+  };
+
   const theme = getTheme();
+
+  const currentLocations =
+    selectedType === 'manure'
+      ? manureList
+      : selectedType === 'nonBiodegradable'
+      ? nonBiodegradableList
+      : wasteLocations[selectedType];
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.accent }]}>
         <Text style={styles.headerTitle}>
           {selectedType === 'manure' ? 'Nearby Manure Listings' : 'Nearby Waste Collection'}
@@ -73,9 +100,8 @@ export default function Nearby() {
         <Text style={styles.headerSubtitle}>Help clean your community 🌍</Text>
       </View>
 
-      {/* Toggle Switch */}
       <View style={styles.toggleContainer}>
-        {['biodegradable', 'nonBiodegradable', 'manure'].map((type) => (
+        {[ 'nonBiodegradable', 'manure'].map(type => (
           <TouchableOpacity
             key={type}
             style={[
@@ -85,63 +111,87 @@ export default function Nearby() {
             onPress={() => setSelectedType(type as typeof selectedType)}
           >
             <Text style={styles.toggleText}>
-              {type === 'biodegradable' ? '🌱 Biodegradable' :
-               type === 'nonBiodegradable' ? '♻️ Non-Biodegradable' :
-               '💩 Manure'}
+              {type === 'biodegradable'
+                ? '🌱 Biodegradable'
+                : type === 'nonBiodegradable'
+                ? '♻️ Non-Biodegradable'
+                : '💩 Manure'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* List */}
       <ScrollView style={styles.listWrapper} contentContainerStyle={{ paddingBottom: 60 }}>
         {loading ? (
           <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 50 }} />
         ) : currentLocations.length === 0 ? (
           <Text style={{ textAlign: 'center', marginTop: 40, color: '#6b7280' }}>No data available.</Text>
-        ) : currentLocations.map((loc: any, index: number) => {
-          const isManure = selectedType === 'manure';
-          const location = isManure ? loc.location : loc.address;
-          const lat = loc?.location?.coordinates?.[1];
-          const lon = loc?.location?.coordinates?.[0];
+        ) : (
+          currentLocations.map((loc: any, index: number) => {
+            const isManure = selectedType === 'manure';
+            const isNonBio = selectedType === 'nonBiodegradable';
+            const location = loc?.location?.address || loc?.address;
+            const lat = loc?.location?.coordinates?.[1];
+            const lon = loc?.location?.coordinates?.[0];
 
-          return (
-            <View key={loc._id || index} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, { color: theme.accent }]}>
-                  {isManure ? loc.sellerName : loc.type}
+            return (
+              <View key={loc._id || index} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={[styles.cardTitle, { color: theme.accent }]}>
+                    {isManure ? loc.sellerName : isNonBio ? loc.name : loc.type}
+                  </Text>
+                  {loc.phoneNumber || loc.number ? (
+                    <TouchableOpacity onPress={() => Linking.openURL(`tel:${loc.phoneNumber || loc.number}`)}>
+                      <Text style={styles.cardPhone}>📞 Call</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                <Text style={styles.cardText}>
+                  {isManure
+                    ? `₹ ${loc.pricePerKg}/kg`
+                    : loc.quantity
+                    ? `${loc.quantity} kg`
+                    : loc.amount}
                 </Text>
-                {isManure && loc.phoneNumber && (
-                  <TouchableOpacity onPress={() => Linking.openURL(`tel:${loc.phoneNumber}`)}>
-                    <Text style={styles.cardPhone}>📞 Call</Text>
-                  </TouchableOpacity>
-                )}
+
+                <Text style={styles.cardText}>
+                  {isManure
+                    ? `Quantity: ${loc.quantity} kg`
+                    : loc.distance && loc.time
+                    ? `${loc.distance} • ${loc.time}`
+                    : loc.number
+                    ? `Contact: ${loc.number}`
+                    : ''}
+                </Text>
+
+                <Text style={styles.cardText}>
+                  📍{' '}
+                  {typeof location === 'string'
+                    ? location
+                    : lat && lon
+                    ? `${lat}, ${lon}`
+                    : 'Location unavailable'}
+                </Text>
+
+                {loc.landmark && <Text style={styles.cardText}>🏞️ Landmark: {loc.landmark}</Text>}
+
+                <TouchableOpacity
+                  style={[styles.collectBtn, { backgroundColor: theme.primary }]}
+                  onPress={() => {
+                    if (lat && lon) {
+                      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`);
+                    }
+                  }}
+                >
+                  <Text style={styles.collectText}>
+                    {isManure ? '🛒 Buy Manure' : '🚚 Collect Now'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.cardText}>
-                {isManure ? `₹ ${loc.pricePerKg}/kg` : loc.amount}
-              </Text>
-              <Text style={styles.cardText}>
-                {isManure ? `Quantity: ${loc.quantity} kg` : `${loc.distance} • ${loc.time}`}
-              </Text>
-              <Text style={styles.cardText}>
-                📍 {typeof location === 'string' ? location : lat && lon ? `${lat}, ${lon}` : 'Location unavailable'}
-              </Text>
-              {loc.landmark && <Text style={styles.cardText}>🏞️ Landmark: {loc.landmark}</Text>}
-              <TouchableOpacity
-                style={[styles.collectBtn, { backgroundColor: theme.primary }]}
-                onPress={() => {
-                  if (lat && lon) {
-                    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`);
-                  }
-                }}
-              >
-                <Text style={styles.collectText}>
-                  {isManure ? '🛒 Buy Manure' : '🚚 Collect Now'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );

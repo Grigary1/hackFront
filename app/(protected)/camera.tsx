@@ -35,12 +35,15 @@ const WASTE_CATEGORIES = [
 
 export default function WasteClassifier() {
   const router = useRouter();
+  const [nonBioModalVisible, setNonBioModalVisible] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [prediction, setPrediction] = useState<{ label: string; confidence: string } | null>(null);
   const [activeTab, setActiveTab] = useState('classify');
 
+  const [myCategory,setMyCategory]=useState('');
   const openCamera = async () => {
     setIsLoading(true);
     try {
@@ -99,11 +102,15 @@ export default function WasteClassifier() {
           label: json.prediction,
           confidence: `${(parseFloat(json.confidence) * 100).toFixed(1)}%`,
         });
-        if (json.prediction == 'biodegradable') {
+
+        if (json.prediction.toLowerCase() === 'biodegradable') {
           setModalVisible(true);
+        } else {
+          setMyCategory(json.prediction);
+          setNonBioModalVisible(true);
         }
       } else {
-        Alert.alert('Classification Error', json.message || 'Failed to classify image');
+        Alert.alert('Prediction Error', 'Could not understand image response');
       }
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Something went wrong');
@@ -161,6 +168,46 @@ export default function WasteClassifier() {
           </View>
         </Modal>
       )}
+      {nonBioModalVisible && (
+        <Modal
+          visible={nonBioModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setNonBioModalVisible(false)}
+        >
+          <View style={styles.overlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.title}>Waste Not Reusable</Text>
+              <Text style={styles.message}>
+                This type of waste is not reusable as manure. Want to learn how to dispose it properly?
+              </Text>
+
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={() => setNonBioModalVisible(false)}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.button, styles.confirmButton]}
+                  onPress={() => {
+                    setNonBioModalVisible(false);
+                    router.push({
+                      pathname: '/dispose',
+                      params: { category: myCategory }
+                    });
+                  }}
+                >
+                  <Text style={styles.buttonText}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>WasteWise Classifier</Text>
         <Text style={styles.headerSubtitle}>AI-powered waste sorting</Text>
